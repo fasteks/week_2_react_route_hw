@@ -66,13 +66,14 @@ server.get('/api/v1/users/', async (req, res) => {
 })
 
 server.post('/api/v1/users/', async (req, res) => {
-  readFile(`${__dirname}/users.json`, { encoding: 'utf8' }).then(async (text) => {
+  readFile(`${__dirname}/users.json`, { encoding: 'utf8' }).then((text) => {
     const arr = JSON.parse(text)
-    const arr1 = arr.map((it) => it.id)
+    const reg = new RegExp(/\d/)
+    const arr1 = arr.map((it) => it.id).filter((it) => reg.test(it))
     const lastIdNumber = Math.max(...arr1) + 1
     const newArray = [...arr, { id: lastIdNumber }]
     writeFile(`${__dirname}/users.json`, JSON.stringify(newArray), { encoding: 'utf8' })
-    res.json({ status: 'success', id: lastIdNumber })
+    res.send({ status: 'success', id: lastIdNumber })
   })
 })
 
