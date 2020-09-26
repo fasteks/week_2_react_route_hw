@@ -89,21 +89,21 @@ server.post('/api/v1/users/', async (req, res) => {
     const lastIdNumber = Math.max(...idsArray)
     newUser.id = lastIdNumber + 1
   }
-  const newArray = [...usersArray, newUser]
-  writeUsersData(newArray)
+  const newUsersArray = [...usersArray, newUser]
+  writeUsersData(newUsersArray)
   res.send({ status: 'success', id: newUser.id })
 })
 
 server.patch('/api/v1/users/:userId', async (req, res) => {
   const { userId } = req.params
-  let usersArray = await getUsersData()
-  usersArray = usersArray.map((it) => {
+  const usersArray = await getUsersData()
+  const newUsersArray = usersArray.map((it) => {
     if (it.id === parseInt(userId, 10)) {
       return { ...it, ...req.body }
     }
     return it
   })
-  writeUsersData(usersArray)
+  writeUsersData(newUsersArray)
   res.json({ status: 'success', id: userId })
 
   // readFile(`${__dirname}/users.json`, { encoding: 'utf8' }).then(async (text) => {
@@ -116,9 +116,9 @@ server.patch('/api/v1/users/:userId', async (req, res) => {
 
 server.delete('/api/v1/users/:userId', async (req, res) => {
   const { userId } = req.params
-  let usersArray = await getUsersData()
-  usersArray = usersArray.filter((it) => it.id !== Number(userId))
-  writeUsersData(usersArray)
+  const usersArray = await getUsersData()
+  const newUsersArray = usersArray.filter((it) => it.id !== Number(userId))
+  writeUsersData(newUsersArray)
   res.json({ status: 'success', id: userId })
 
   // const { userId } = req.params
