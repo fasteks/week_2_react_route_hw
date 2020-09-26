@@ -53,51 +53,72 @@ const middleware = [
 
 middleware.forEach((it) => server.use(it))
 
-server.get('/api/v1/users/', async (req, res) => {
-  await readFile(`${__dirname}/users.json`, { encoding: 'utf8' })
+const getUsersData = () => {
+  return readFile(`${__dirname}/users.json`, { encoding: 'utf8' })
     .then((text) => {
-      res.json(JSON.parse(text))
+      return JSON.parse(text)
     })
     .catch(async () => {
       const { data: usersData } = await axios('https://jsonplaceholder.typicode.com/users')
-      await writeFile(`${__dirname}/users.json`, JSON.stringify(usersData), { encoding: 'utf8' })
-      res.json(JSON.parse(await readFile(`${__dirname}/users.json`, { encoding: 'utf8' })))
+      writeFile(`${__dirname}/users.json`, JSON.stringify(usersData), { encoding: 'utf8' })
+      return usersData
     })
+}
+
+server.get('/api/v1/users/', async (req, res) => {
+  const usersArray = await getUsersData()
+  res.json(usersArray)
 })
 
 server.post('/api/v1/users/', async (req, res) => {
-  readFile(`${__dirname}/users.json`, { encoding: 'utf8' }).then((text) => {
-    const arr = JSON.parse(text)
-    const reg = new RegExp(/\d/)
-    const arr1 = arr.map((it) => it.id).filter((it) => reg.test(it))
-    const lastIdNumber = Math.max(...arr1) + 1
-    const newArray = [...arr, { id: lastIdNumber }]
-    writeFile(`${__dirname}/users.json`, JSON.stringify(newArray), { encoding: 'utf8' })
-    res.send({ status: 'success', id: lastIdNumber })
-  })
+  const usersArray = await getUsersData()
+  const newUser = req.body
+  const reg = new RegExp(/\d/)
+  const idsArray = usersArray.map((it) => it.id).filter((it) => reg.test(it))
+  const lastIdNumber = Math.max(...idsArray)
+  newUser.id = lastIdNumber + 1
+  const newArray = [...usersArray, newUser]
+  writeFile(`${__dirname}/users.json`, JSON.stringify(newArray), { encoding: 'utf8' })
+  res.send({ status: 'success', id: newUser.id })
 })
 
 server.patch('/api/v1/users/:userId', async (req, res) => {
   const { userId } = req.params
-  readFile(`${__dirname}/users.json`, { encoding: 'utf8' }).then(async (text) => {
-    const arr = JSON.parse(text)
-    const newArray = [...arr, { id: userId }]
-    writeFile(`${__dirname}/users.json`, JSON.stringify(newArray), { encoding: 'utf8' })
-    res.json({ status: 'success', id: userId })
+  let usersArray = await getUsersData()
+  usersArray = usersArray.map((it) => {
+    if (it.id === parseInt(userId, 10)) {
+      return { ...it, ...req.body }
+    }
+    return it
   })
+  writeFile(`${__dirname}/users.json`, JSON.stringify(usersArray), { encoding: 'utf8' })
+  res.json({ status: 'success', id: userId })
+
+  // readFile(`${__dirname}/users.json`, { encoding: 'utf8' }).then(async (text) => {
+  //   const arr = JSON.parse(text)
+  //   const newArray = [...arr, { id: userId }]
+  //   writeFile(`${__dirname}/users.json`, JSON.stringify(newArray), { encoding: 'utf8' })
+  //   res.json({ status: 'success', id: userId })
+  // })
 })
 
 server.delete('/api/v1/users/:userId', async (req, res) => {
   const { userId } = req.params
-  readFile(`${__dirname}/users.json`, { encoding: 'utf8' }).then(async (text) => {
-    const arr = JSON.parse(text)
-    const newArray = arr.filter((it) => it.id !== userId && it.id !== Number(userId))
-    writeFile(`${__dirname}/users.json`, JSON.stringify(newArray), { encoding: 'utf8' })
-    res.json({ status: 'success', id: userId })
-  })
+  let usersArray = await getUsersData()
+  usersArray = usersArray.filter((it) => it.id !== Number(userId))
+  writeFile(`${__dirname}/users.json`, JSON.stringify(usersArray), { encoding: 'utf8' })
+  res.json({ status: 'success', id: userId })
+
+  // const { userId } = req.params
+  // readFile(`${__dirname}/users.json`, { encoding: 'utf8' }).then(async (text) => {
+  //   const arr = JSON.parse(text)
+  //   const newArray = arr.filter((it) => it.id !== userId && it.id !== Number(userId))
+  //   writeFile(`${__dirname}/users.json`, JSON.stringify(newArray), { encoding: 'utf8' })
+  //   res.json({ status: 'success', id: userId })
+  // })
 })
 
-server.delete('/api/v1/users/', async (req, res) => {
+server.delete('/api/v1/users/', (req, res) => {
   unlink(`${__dirname}/users.json`)
   res.json({ status: 'success' })
 })
