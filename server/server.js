@@ -60,9 +60,17 @@ const getUsersData = () => {
     })
     .catch(async () => {
       const { data: usersData } = await axios('https://jsonplaceholder.typicode.com/users')
+      // usersData.sort((a,b) => a.id - b.id)
+      // отсортирует входящий массив по возрастанию номеров id
+      // необходимо в случае того, если мы уверены что в поле id лежат только числа,
+      // тогда для метода post можно использовать добавление последнего id как arr[arr.length - 1] + 1
       writeFile(`${__dirname}/users.json`, JSON.stringify(usersData), { encoding: 'utf8' })
       return usersData
     })
+}
+
+const writeUsersData = (arr) => {
+  return writeFile(`${__dirname}/users.json`, JSON.stringify(arr), { encoding: 'utf8' })
 }
 
 server.get('/api/v1/users/', async (req, res) => {
@@ -82,7 +90,7 @@ server.post('/api/v1/users/', async (req, res) => {
     newUser.id = lastIdNumber + 1
   }
   const newArray = [...usersArray, newUser]
-  writeFile(`${__dirname}/users.json`, JSON.stringify(newArray), { encoding: 'utf8' })
+  writeUsersData(newArray)
   res.send({ status: 'success', id: newUser.id })
 })
 
@@ -95,7 +103,7 @@ server.patch('/api/v1/users/:userId', async (req, res) => {
     }
     return it
   })
-  writeFile(`${__dirname}/users.json`, JSON.stringify(usersArray), { encoding: 'utf8' })
+  writeUsersData(usersArray)
   res.json({ status: 'success', id: userId })
 
   // readFile(`${__dirname}/users.json`, { encoding: 'utf8' }).then(async (text) => {
@@ -110,7 +118,7 @@ server.delete('/api/v1/users/:userId', async (req, res) => {
   const { userId } = req.params
   let usersArray = await getUsersData()
   usersArray = usersArray.filter((it) => it.id !== Number(userId))
-  writeFile(`${__dirname}/users.json`, JSON.stringify(usersArray), { encoding: 'utf8' })
+  writeUsersData(usersArray)
   res.json({ status: 'success', id: userId })
 
   // const { userId } = req.params
