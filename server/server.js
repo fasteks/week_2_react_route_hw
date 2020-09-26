@@ -37,8 +37,8 @@ const port = process.env.PORT || 8090
 const server = express()
 
 const setHeaders = (req, res, next) => {
-  res.set('x-skillcrucial-user', '71cfff71-34e1-46eb-95ad-29637d913771');
-  res.set('Access-Control-Expose-Headers', 'X-SKILLCRUCIAL-USER')  
+  res.set('x-skillcrucial-user', '71cfff71-34e1-46eb-95ad-29637d913771')
+  res.set('Access-Control-Expose-Headers', 'X-SKILLCRUCIAL-USER')
   next()
 }
 
@@ -73,10 +73,14 @@ server.get('/api/v1/users/', async (req, res) => {
 server.post('/api/v1/users/', async (req, res) => {
   const usersArray = await getUsersData()
   const newUser = req.body
-  const reg = new RegExp(/\d/)
-  const idsArray = usersArray.map((it) => it.id).filter((it) => reg.test(it))
-  const lastIdNumber = Math.max(...idsArray)
-  newUser.id = lastIdNumber + 1
+  if (usersArray.length === 0) {
+    newUser.id = 1
+  } else {
+    const reg = new RegExp(/\d/)
+    const idsArray = usersArray.map((it) => it.id).filter((it) => reg.test(it))
+    const lastIdNumber = Math.max(...idsArray)
+    newUser.id = lastIdNumber + 1
+  }
   const newArray = [...usersArray, newUser]
   writeFile(`${__dirname}/users.json`, JSON.stringify(newArray), { encoding: 'utf8' })
   res.send({ status: 'success', id: newUser.id })
